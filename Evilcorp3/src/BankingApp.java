@@ -156,7 +156,7 @@ public class BankingApp {
 			        	preStatement = conn.prepareStatement(sql);
 					    
 					      result = preStatement.executeQuery();
-						System.out.println("Account closed " + accountNum + "congrats");
+						System.out.println("Account closed " );
 					} else{
 			        	System.out.println("Account not found.");
 			        }
@@ -177,6 +177,9 @@ public class BankingApp {
 		        if(result.next()){
 		        	if(result.getInt("status")==1){
 		        		sql="select * from transaction where Account_Id =" +result.getInt("ACCOUNT_ID");
+		        		preStatement = conn.prepareStatement(sql);
+				        result = preStatement.executeQuery();
+				        
 		        	}
 		        }
 		        	
