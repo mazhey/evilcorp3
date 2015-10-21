@@ -4,13 +4,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DateFormat;
-import java.text.NumberFormat;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.Properties;
 
 
@@ -20,8 +16,10 @@ public class Account {
 	private String accountName;
 	private boolean status;
 	private int accountID;
+	private Connection conn;
 	private ArrayList<Transcation> transaction = new ArrayList<Transcation>(); 
 	
+	//CONSTRUCTORS
 	public Account(String accountNum,String accountName){
 		this.setAccountName(accountName);
 		this.setAccountNum(accountNum);
@@ -30,6 +28,8 @@ public class Account {
 	public Account(){
 		
 	}
+	
+	//GETTERS AND SETTERS
 	public String getAccountNum() {
 		return accountNum;
 	}
@@ -55,6 +55,8 @@ public class Account {
 		this.status = status;
 	}
 	
+	
+	//SEARCH FOR AN ACCOUNT IN ORACLE
 	public ResultSet getAccount() throws SQLException{
 		String url = "jdbc:oracle:thin:system/password@localhost"; 
 	      
@@ -64,17 +66,20 @@ public class Account {
         props.setProperty("password", "password");
       
         //creating connection to Oracle database using JDBC
-        Connection conn = DriverManager.getConnection(url,props);
+         conn = DriverManager.getConnection(url,props);
 		 String sql = "select  * from  ACCOUNT where ACCOUNT_NUM = '" + accountNum +"'";
 
 	        //creating PreparedStatement object to execute query
 	        PreparedStatement preStatement = conn.prepareStatement(sql);
 	    
 	        ResultSet result = preStatement.executeQuery();
+	        
 	        return result;
 	      
 	}
 	
+	
+	//ADD NEW ACCOUNT TO DATABASE
 	public boolean addNewAccount() throws SQLException {
 		boolean isAdded = false;
 		String url = "jdbc:oracle:thin:system/password@localhost";
@@ -107,9 +112,12 @@ public class Account {
 			isAdded = true;
 
 		}
+		
 		return isAdded;
 	}
 	
+	
+	//REMOVE AN ACCOUNT FROM DATABASE
 	public void removeAccount() throws SQLException {
 
 		String url = "jdbc:oracle:thin:system/password@localhost";
@@ -126,9 +134,12 @@ public class Account {
 				+ this.accountNum + "'";
 		PreparedStatement preStatement = conn.prepareStatement(sql);
 		ResultSet result = preStatement.executeQuery();
+		
 
 	}
 
+	
+	//CLOSE AN ACCOUNT (CHANGE STATUS TO 0)
 	public void colseAccount() throws SQLException {
 		String url = "jdbc:oracle:thin:system/password@localhost";
 
@@ -144,11 +155,12 @@ public class Account {
 		PreparedStatement preStatement = conn.prepareStatement(sql);
 
 		ResultSet result = preStatement.executeQuery();
+		
 
 	}
 
-	// calculates the current balance from the transactions for a certain
-	// accountID
+
+	//CALCULATE CURRENT BALANACE
 	public double getCurrentBalance() throws SQLException {
 		String url = "jdbc:oracle:thin:system/password@localhost";
 
@@ -167,19 +179,96 @@ public class Account {
 
 		double balance = 0;
 		while (result.next()) {
-			if (result.getInt("type")==	1){
 				balance += result.getDouble("Amount");
-			}else{
-				balance -= result.getDouble("Amount");
-			}
+			
 			if (balance <0){
 				balance -= 35;
 			}
 
 		}
+		
 		return balance;
 	}
 	
+
+	//WITHDRAWAL TRANSACTION 
+	public boolean withdrawalTransaction(double amount) throws SQLException, ParseException {
+		boolean isEnough = false;
+		if (this.getCurrentBalance() < amount) {
+			return isEnough;
+		} else {
+			Date myDate = new Date();
+			DateFormat shortDf = DateFormat.getDateInstance(DateFormat.SHORT);
+			String dateStr= shortDf.format(myDate);
+			amount *=-1;
+			Transcation transcation = new Transcation(4, amount, dateStr);
+			if (transcation.addNewTransaction(accountID)) {
+				isEnough = true;
+			}
+		}
+		return isEnough;
+	}
+	
+	//DEPOSIT TRANSACTION
+	public void depositTranscation(double amount) throws SQLException {
+
+		Date myDate = new Date();
+		DateFormat shortDf = DateFormat.getDateInstance(DateFormat.SHORT);
+		String dateStr = shortDf.format(myDate);
+		amount *= -1;
+		Transcation transcation = new Transcation(1, amount, dateStr);
+		transcation.addNewTransaction(accountID);
+
+	}
+
+
+	//CHECK TRANSACTION
+	public void checkTranscation(double amount, Date date1) throws SQLException {
+		Date myDate = new Date();
+		DateFormat shortDf = DateFormat.getDateInstance(DateFormat.SHORT);
+		String dateStr= shortDf.format(myDate);
+		amount *= -1;
+		Transcation transcation = new Transcation(4, amount, dateStr);
+		transcation.addNewTransaction(accountID);
+	}
+	
+	
+	//GET ALL ACCOUNT TRANSACTIONS FROM DATABASE
+	public String getAccountTransaction() throws SQLException{
+	
+		String url = "jdbc:oracle:thin:system/password@localhost";
+
+		// properties for creating connection to Oracle database
+		Properties props = new Properties();
+		props.setProperty("user", "TESTUSERDB");
+		props.setProperty("password", "password");
+
+		// creating connection to Oracle database using JDBC
+		Connection conn = DriverManager.getConnection(url, props);
+		String sql = "select Amount, Transaction_Date, Description from transaction, transaction_type where Account_Id ="
+				+ this.accountID + "AND transaction.type = transaction_type.type";
+		
+		PreparedStatement preStatement = conn.prepareStatement(sql);
+		ResultSet result = preStatement.executeQuery();
+		String str="";
+		
+		while(result.next()){
+
+		str += "Transaction Type: " + result.getString("description");
+		str+= "\nTransaction amount: " + result.getDouble("Amount");
+		str+= "\nTransaction Date: " + result.getString("TRANSACTION_DATE");
+		str +="\n";
+		}
+		
+		return str;
+	}
+	public void closeConnection() throws SQLException{
+		conn.close();
+	}
+}
+
+/**
+		
 	
 	public int searchAccount(ArrayList<Account> myAccount, String accountNum ){
 		
@@ -192,77 +281,6 @@ public class Account {
 		
 		return index;
 	}
-	
-	public boolean withdrawalTransaction(double amount) throws SQLException, ParseException {
-		boolean isEnough = false;
-		if (this.getCurrentBalance() < amount) {
-			return isEnough;
-		} else {
-			Date myDate = new Date();
-			Date sqlDate = new java.sql.Date(myDate.getTime());
-		
-			Transcation transcation = new Transcation(4, amount, sqlDate);
-			if (transcation.addNewTransaction(accountID)) {
-				isEnough = true;
-			}
-		}
-		return isEnough;
-	}
-	
-	public void depositTranscation(double amount) throws SQLException, ParseException {
-
-		Date myDate = new Date();
-		SimpleDateFormat format = new SimpleDateFormat("MM/dd/yyyy");
-		myDate = (Date)format.parse(myDate.);
-		Date sqlDate = new java.sql.Date(myDate.getTime());
-	
-		Transcation transcation = new Transcation(4, amount, sqlDate);
-		boolean isAdded = transcation.addNewTransaction(this.accountID);
-
-	}
-	///this needs to be revised
-	public void checkTranscation(double amount, Date date1) throws SQLException, ParseException {
-		Date myDate = new Date();
-		Date sqlDate = new java.sql.Date(myDate.getTime());
-	
-		Transcation transcation = new Transcation(4, amount, sqlDate);
-		transcation.addNewTransaction(accountID);
-	}
-	
-	public String getAccountTransaction() throws SQLException{
-		int i;
-		String url = "jdbc:oracle:thin:system/password@localhost";
-
-		// properties for creating connection to Oracle database
-		Properties props = new Properties();
-		props.setProperty("user", "TESTUSERDB");
-		props.setProperty("password", "password");
-
-		// creating connection to Oracle database using JDBC
-		Connection conn = DriverManager.getConnection(url, props);
-		String sql = "select * from transaction where Account_Id ="
-				+ this.accountID;
-		
-		PreparedStatement preStatement = conn.prepareStatement(sql);
-		ResultSet result = preStatement.executeQuery();
-		String str="";
-		while(result.next()){
-			String sqlType = "select Description from transaction_type where transaction_type.type ="
-					+ result.getInt("type");
-			
-			preStatement = conn.prepareStatement(sqlType);
-			ResultSet rs = preStatement.executeQuery();
-		str += "Transaction Type: " + rs.getString("Description");
-		str+= "\nTransaction amount: " + result.getDouble("Amount");
-		str+= "\nTransaction Date: " + result.getDate("TRANSACTION_DATE");
-		str +="\n";
-		}
-
-		return str;
-	}
-}
-
-/**
 	
 	
 	public void addTranscation(Transcation transcation){

@@ -1,12 +1,8 @@
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.ParseException;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.Properties;
 import java.util.Scanner;
 
 public class BankingApp {
@@ -14,10 +10,10 @@ public class BankingApp {
 	public static void main(String[] args) throws SQLException, ParseException {
 		
 		Scanner keyboard = new Scanner(System.in);
-		String accountNum, accountName, type, response, answer;
+		String accountNum, accountName, response;
 		double balance, amount, withdraw, deposit;
 		Date date = new Date();
-		int accountID;
+		
 		Account myAccount = new Account();
 		//ArrayList<Account> myAccount = new ArrayList<Account>();
 
@@ -62,7 +58,7 @@ public class BankingApp {
 						// account already exists
 						System.out.println("Account already exists. ");
 					}
-
+					myAccount.closeConnection();
 				// remove method
 			} else if (response.equals("2")) {
 
@@ -77,7 +73,7 @@ public class BankingApp {
 				} else {
 					System.out.println("Account not found.");
 				}
-
+				myAccount.closeConnection();
 			}
 			
 			
@@ -96,6 +92,7 @@ public class BankingApp {
 				} else {
 					System.out.println("Account not found.");
 				}
+				myAccount.closeConnection();
 			}
 			       
 				
@@ -130,7 +127,7 @@ public class BankingApp {
 				} else {
 					System.out.println("Account not found ");
 				}
-
+				myAccount.closeConnection();
 			}
 
 		
@@ -159,6 +156,7 @@ public class BankingApp {
 				} else {
 					System.out.println("Account not found ");
 				}
+				myAccount.closeConnection();
 			}
 
 			else if (response.equals("6")) {
@@ -189,6 +187,7 @@ public class BankingApp {
 				} else {
 					System.out.println("Account not found ");
 				}
+				myAccount.closeConnection();
 			}
 						
 
@@ -204,6 +203,7 @@ public class BankingApp {
 				
 					if (result.getInt("status") == 1) {
 						myAccount.setaccountID(result.getInt("Account_ID"));
+						System.out.println(myAccount.getAccountID());
 						System.out.println("Account Number: " + myAccount.getAccountNum());
 						System.out.println("Account Name: " + myAccount.getAccountName());
 						System.out.println(myAccount.getAccountTransaction());
@@ -215,6 +215,7 @@ public class BankingApp {
 			else{
 				System.out.println("Account not found.");
 			}
+				myAccount.closeConnection();
 		}
 	
 			else {
