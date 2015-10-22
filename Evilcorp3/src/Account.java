@@ -215,7 +215,6 @@ public class Account {
 		Date myDate = new Date();
 		DateFormat shortDf = DateFormat.getDateInstance(DateFormat.SHORT);
 		String dateStr = shortDf.format(myDate);
-		amount *= -1;
 		Transcation transcation = new Transcation(1, amount, dateStr);
 		transcation.addNewTransaction(accountID);
 
